@@ -1,6 +1,6 @@
 import React from 'react'
 
-const authSlice = () => {
+const FileUploadField = () => {
   return (
     <div>
       
@@ -8,4 +8,4 @@ const authSlice = () => {
   )
 }
 
-export default authSlice
+export default FileUploadField
