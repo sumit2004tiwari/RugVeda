@@ -23,21 +23,17 @@ router.get('/', authRequired, allowRoles('ADMIN'), asyncHandler(async (req, res)
 
 const upsertSchema = z.object({ code: z.string().min(2), description: z.string().optional(), discountType: z.enum(['PERCENTAGE','FIXED']), discountValue: z.number().positive(), maxDiscountAmount: z.number().nonnegative().nullable().optional(), minOrderAmount: z.number().nonnegative().optional(), startsAt: z.string().datetime().nullable().optional(), endsAt: z.string().datetime().nullable().optional(), usageLimit: z.number().int().positive().nullable().optional(), perUserLimit: z.number().int().positive().optional(), isFirstOrderOnly: z.boolean().optional(), isActive: z.boolean().optional() });
 router.post('/', authRequired, allowRoles('ADMIN'), validate(upsertSchema), asyncHandler(async (req, res) => {
-  const data = { ...req.body, startsAt: req.body.startsAt ? new Date(req.body.startsAt) : null, endsAt: req.body.endsAt ? new Date(req.body.endsAt) : null };
-  const c = await prisma.coupon.create({ data });
+  const c = await ctrl.create(req);
   return success(res, c, 'Coupon created', 201);
 }));
 
 router.put('/:id', authRequired, allowRoles('ADMIN'), validate(upsertSchema.partial()), asyncHandler(async (req, res) => {
-  const data = { ...req.body };
-  if (data.startsAt) data.startsAt = new Date(data.startsAt);
-  if (data.endsAt) data.endsAt = new Date(data.endsAt);
-  const c = await prisma.coupon.update({ where: { id: req.params.id }, data });
+  const c = await ctrl.update(req);
   return success(res, c, 'Coupon updated');
 }));
 
 router.delete('/:id', authRequired, allowRoles('ADMIN'), asyncHandler(async (req, res) => {
-  await prisma.coupon.update({ where: { id: req.params.id }, data: { isActive: false } });
+  await ctrl.deactivate(req);
   return success(res, null, 'Coupon deactivated');
 }));
 
