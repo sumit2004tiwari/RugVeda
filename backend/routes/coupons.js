@@ -16,9 +16,9 @@ async function computeDiscount(coupon, subtotal) {
   return Math.min(Number(coupon.discountValue), subtotal);
 }
 
-router.get('/', authRequired, allowRoles('ADMIN'), asyncHandler(async (_req, res) => {
-  const items = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } });
-  return success(res, items);
+router.get('/', authRequired, allowRoles('ADMIN'), asyncHandler(async (req, res) => {
+  const data = await ctrl.list(req);
+  return success(res, data);
 }));
 
 const upsertSchema = z.object({ code: z.string().min(2), description: z.string().optional(), discountType: z.enum(['PERCENTAGE','FIXED']), discountValue: z.number().positive(), maxDiscountAmount: z.number().nonnegative().nullable().optional(), minOrderAmount: z.number().nonnegative().optional(), startsAt: z.string().datetime().nullable().optional(), endsAt: z.string().datetime().nullable().optional(), usageLimit: z.number().int().positive().nullable().optional(), perUserLimit: z.number().int().positive().optional(), isFirstOrderOnly: z.boolean().optional(), isActive: z.boolean().optional() });
