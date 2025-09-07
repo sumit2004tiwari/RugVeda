@@ -74,4 +74,18 @@ router.post('/provider/link', asyncHandler(async (req, res) => {
   return success(res, { provider, providerUserId }, 'Provider linked', 201);
 }));
 
+router.get('/providers', asyncHandler(async (req, res) => {
+  if (!req.user) throw new ApiError(401, 'Unauthorized');
+  const list = await prisma.authProvider.findMany({ where: { userId: req.user.id } });
+  return success(res, list);
+}));
+
+router.delete('/provider/:provider/:providerUserId', asyncHandler(async (req, res) => {
+  if (!req.user) throw new ApiError(401, 'Unauthorized');
+  const { provider, providerUserId } = req.params;
+  await prisma.authProvider.delete({ where: { provider_providerUserId: { provider, providerUserId } } });
+  await recordAudit('User', req.user.id, 'PROVIDER_UNLINK', req.user.id, { provider });
+  return success(res, null, 'Provider unlinked');
+}));
+
 module.exports = router;
