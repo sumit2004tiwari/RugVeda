@@ -5,6 +5,7 @@ const { authRequired, allowRoles } = require('../middlewares/auth');
 const { v4: uuidv4 } = require('uuid');
 const { asyncHandler } = require('../utils/async');
 const { restoreForCancellation } = require('../services/inventory');
+const { recordAudit } = require('../services/audit');
 
 const router = express.Router();
 
@@ -104,6 +105,7 @@ router.post('/', authRequired, asyncHandler(async (req, res) => {
     await prisma.order.update({ where: { id: order.id }, data: { status: 'CONFIRMED' } });
   }
 
+  await recordAudit('Order', order.id, 'CREATE', req.user.id, { totalAmount });
   return success(res, { orderId: order.id, orderNumber: order.orderNumber, payment }, 'Order placed', 201);
 }));
 
@@ -120,6 +122,7 @@ router.put('/:id/status', authRequired, allowRoles('ADMIN','VENDOR'), asyncHandl
   if (!allowed.has(status)) throw new ApiError(400, 'Invalid status');
   await prisma.order.update({ where: { id }, data: { status } });
   if (status === 'CANCELLED') await restoreForCancellation(order.items);
+  await recordAudit('Order', id, 'STATUS_UPDATE', req.user?.id, { status });
   return success(res, { id, status }, 'Status updated');
 }));
 
