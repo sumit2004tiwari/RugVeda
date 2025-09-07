@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // agar tum PostgreSQL use kar rahe ho
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  VENDOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+// ================= USER ===================
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  password     String?
+  googleId     String?     @unique
+  phone        String?     @unique
+  profileImage String?
+  role         UserRole    @default(CUSTOMER)
+  status       UserStatus  @default(ACTIVE)
+  lastLogin    DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  addresses    Address[]
+  products     Product[]   @relation("VendorProducts")
+  orders       Order[]
+  cart         Cart?
+  wishlist     Wishlist[]
+}
+
+// ================= ADDRESS ===================
+model Address {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  street    String
+  city      String
+  state     String
+  country   String
+  postalCode String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ================= CATEGORY ===================
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    Category? @relation("CategoryToParent", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryToParent")
+  products  Product[]
+}
+
+// ================= PRODUCT ===================
+model Product {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int        @default(0)
+  images      String[]
+  vendor      User       @relation("VendorProducts", fields: [vendorId], references: [id])
+  vendorId    String
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  wishlists   Wishlist[]
+}
+
+// ================= ORDER ===================
+model Order {
+  id        String     @id @default(cuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  status    String     @default("PENDING")
+  total     Float
+  address   Address    @relation(fields: [addressId], references: [id])
+  addressId String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int      @default(1)
+  price     Float
+}
+
+// ================= CART ===================
+model Cart {
+  id        String     @id @default(cuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String     @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  cartId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int      @default(1)
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ================= WISHLIST ===================
+model Wishlist {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  createdAt DateTime @default(now())
+}

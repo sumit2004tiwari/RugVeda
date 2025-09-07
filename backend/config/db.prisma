@@ -1,0 +1,376 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // postgres://user:pass@host:5432/dbname
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum NotificationLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
+enum SenderType {
+  USER
+  VENDOR
+  SYSTEM
+}
+
+model User {
+  id               String             @id @default(uuid()) @db.Uuid
+  fullName         String             @db.VarChar(255)
+  email            String             @unique @db.VarChar(320)
+  passwordHash     String?            @db.VarChar(255)
+  phone            String?            @db.VarChar(20)
+  isEmailVerified  Boolean            @default(false)
+  isPhoneVerified  Boolean            @default(false)
+  addresses        Address[]
+  cart             Cart?
+  orders           Order[]
+  authProviders    AuthProvider[]
+  couponRedemptions CouponRedemption[]
+  chats            Chat[]
+  notifications    Notification[]
+  chatMessagesSent ChatMessage[]      @relation("sender_user", fields: [], references: [])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  isDeleted        Boolean            @default(false)
+  deletedAt        DateTime?
+
+  @@map("users")
+  @@index([email])
+}
+
+model AuthProvider {
+  id               String   @id @default(uuid()) @db.Uuid
+  user             User     @relation(fields: [userId], references: [id])
+  userId           String   @db.Uuid
+  provider         String   @db.VarChar(50)
+  providerUserId   String   @db.VarChar(255)
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  @@unique([provider, providerUserId])
+  @@map("auth_providers")
+}
+
+model Vendor {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(255)
+  email     String?   @db.VarChar(320)
+  phone     String?   @db.VarChar(20)
+  config    Json?     @default("{}")
+  chats     Chat[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("vendor")
+}
+
+model Category {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @db.VarChar(150)
+  slug      String     @unique @db.VarChar(200)
+  parentId  String?    @db.Uuid
+  parent    Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryToParent")
+  position  Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  products  ProductCategory[]
+
+  @@map("categories")
+  @@index([slug])
+}
+
+model Product {
+  id            String            @id @default(uuid()) @db.Uuid
+  sku           String?           @unique @db.VarChar(100)
+  name          String            @db.VarChar(300)
+  slug          String            @unique @db.VarChar(300)
+  description   String?
+  price         Decimal           @db.Decimal(12, 2)
+  currency      String            @default("INR") @db.VarChar(10)
+  isActive      Boolean           @default(true)
+  stockQuantity Int               @default(0)
+  weight        Decimal?          @db.Decimal(8, 3)
+  metadata      Json?             @default("{}")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  isDeleted     Boolean           @default(false)
+
+  variants      ProductVariant[]
+  images        ProductImage[]
+  categories    ProductCategory[]
+  orderItems    OrderItem[]
+
+  @@map("products")
+  @@index([slug])
+  @@fulltext([name], map: "products_name_tsv") // Prisma 4+ supports fulltext mapping in some connectors; if unsupported remove
+}
+
+model ProductVariant {
+  id              String    @id @default(uuid()) @db.Uuid
+  product         Product   @relation(fields: [productId], references: [id])
+  productId       String    @db.Uuid
+  sku             String?   @unique @db.VarChar(150)
+  variantName     String?   @db.VarChar(200)
+  additionalPrice Decimal   @default(0) @db.Decimal(12, 2)
+  stockQuantity   Int       @default(0)
+  metadata        Json?     @default("{}")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  images          ProductImage[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String   @db.Uuid
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId  String?  @db.Uuid
+  url        String
+  alt        String?
+  position   Int      @default(0)
+
+  @@map("product_images")
+}
+
+model ProductCategory {
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String   @db.Uuid
+  category  Category @relation(fields: [categoryId], references: [id])
+  categoryId String  @db.Uuid
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+model Address {
+  id         String   @id @default(uuid()) @db.Uuid
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @db.Uuid
+  fullName   String?  @db.VarChar(255)
+  line1      String   @db.VarChar(400)
+  line2      String?  @db.VarChar(400)
+  city       String   @db.VarChar(150)
+  state      String?  @db.VarChar(150)
+  country    String   @db.VarChar(100) @default("India")
+  postalCode String   @db.VarChar(30)
+  phone      String?  @db.VarChar(20)
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  shippingOrders Order[] @relation("shipping_address")
+  billingOrders  Order[] @relation("billing_address")
+
+  @@map("addresses")
+}
+
+model Cart {
+  id        String     @id @default(uuid()) @db.Uuid
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String     @unique @db.Uuid
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+  @@index([userId])
+}
+
+model CartItem {
+  id         String        @id @default(uuid()) @db.Uuid
+  cart       Cart          @relation(fields: [cartId], references: [id])
+  cartId     String        @db.Uuid
+  product    Product       @relation(fields: [productId], references: [id])
+  productId  String        @db.Uuid
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId  String?       @db.Uuid
+  quantity   Int           @default(1)
+  unitPrice  Decimal       @db.Decimal(12, 2)
+  createdAt  DateTime      @default(now())
+
+  @@unique([cartId, productId, variantId])
+  @@map("cart_items")
+}
+
+model Coupon {
+  id               String              @id @default(uuid()) @db.Uuid
+  code             String              @unique @db.VarChar(100)
+  description      String?
+  discountType     DiscountType
+  discountValue    Decimal             @db.Decimal(12, 2)
+  maxDiscountAmount Decimal?
+  minOrderAmount   Decimal             @default(0) @db.Decimal(12, 2)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  usageLimit       Int?
+  perUserLimit     Int                 @default(1)
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+
+  redemptions      CouponRedemption[]
+  orders           Order[]             @relation("order_coupon")
+
+  @@map("coupons")
+  @@index([code])
+}
+
+model CouponRedemption {
+  id         String   @id @default(uuid()) @db.Uuid
+  coupon     Coupon   @relation(fields: [couponId], references: [id])
+  couponId   String   @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?  @db.Uuid
+  order      Order?   @relation(fields: [orderId], references: [id])
+  orderId    String?  @db.Uuid
+  redeemedAt DateTime @default(now())
+
+  @@map("coupon_redemptions")
+}
+
+model Order {
+  id                String       @id @default(uuid()) @db.Uuid
+  user              User         @relation(fields: [userId], references: [id])
+  userId            String       @db.Uuid
+  orderNumber       String       @unique @db.VarChar(50)
+  status            OrderStatus  @default(PENDING)
+  shippingAddress   Address?     @relation("shipping_address", fields: [shippingAddressId], references: [id])
+  shippingAddressId String?      @db.Uuid
+  billingAddress    Address?     @relation("billing_address", fields: [billingAddressId], references: [id])
+  billingAddressId  String?      @db.Uuid
+  currency          String       @default("INR") @db.VarChar(10)
+  subtotal          Decimal      @db.Decimal(12, 2)
+  shippingAmount    Decimal      @default(0) @db.Decimal(12, 2)
+  discountAmount    Decimal      @default(0) @db.Decimal(12, 2)
+  taxAmount         Decimal      @default(0) @db.Decimal(12, 2)
+  totalAmount       Decimal      @db.Decimal(12, 2)
+  coupon            Coupon?      @relation("order_coupon", fields: [couponId], references: [id])
+  couponId          String?      @db.Uuid
+  placedAt          DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  isDeleted         Boolean      @default(false)
+
+  items             OrderItem[]
+  payments          Payment[]
+
+  @@map("orders")
+  @@index([userId])
+}
+
+model OrderItem {
+  id         String    @id @default(uuid()) @db.Uuid
+  order      Order     @relation(fields: [orderId], references: [id])
+  orderId    String    @db.Uuid
+  product    Product   @relation(fields: [productId], references: [id])
+  productId  String    @db.Uuid
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId  String?   @db.Uuid
+  quantity   Int
+  unitPrice  Decimal   @db.Decimal(12, 2)
+  totalPrice Decimal   @db.Decimal(12, 2)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id                 String        @id @default(uuid()) @db.Uuid
+  order              Order         @relation(fields: [orderId], references: [id])
+  orderId            String        @db.Uuid
+  provider           String        @db.VarChar(50)
+  providerPaymentId  String?       @db.VarChar(255)
+  amount             Decimal       @db.Decimal(12, 2)
+  currency           String        @default("INR") @db.VarChar(10)
+  status             PaymentStatus
+  paymentMethod      Json?
+  paidAt             DateTime?
+  createdAt          DateTime      @default(now())
+
+  @@map("payments")
+  @@index([orderId])
+}
+
+model Notification {
+  id         String            @id @default(uuid()) @db.Uuid
+  user       User?             @relation(fields: [userId], references: [id])
+  userId     String?           @db.Uuid
+  vendorRead Boolean           @default(false)
+  title      String            @db.VarChar(255)
+  body       String?
+  meta       Json?
+  level      NotificationLevel @default(INFO)
+  createdAt  DateTime          @default(now())
+  isRead     Boolean           @default(false)
+
+  @@map("notifications")
+}
+
+model Chat {
+  id        String      @id @default(uuid()) @db.Uuid
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String      @db.Uuid
+  vendor    Vendor?     @relation(fields: [vendorId], references: [id])
+  vendorId  String?     @db.Uuid
+  subject   String?
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  messages  ChatMessage[]
+  @@map("chats")
+}
+
+model ChatMessage {
+  id          String     @id @default(uuid()) @db.Uuid
+  chat        Chat       @relation(fields: [chatId], references: [id])
+  chatId      String     @db.Uuid
+  senderType  SenderType
+  senderId    String?    @db.Uuid
+  message     String
+  attachments Json?
+  createdAt   DateTime   @default(now())
+  isRead      Boolean    @default(false)
+
+  @@map("chat_messages")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  entityType  String   @db.VarChar(100)
+  entityId    String?  @db.Uuid
+  action      String   @db.VarChar(50)
+  performedBy String?  @db.Uuid
+  performedAt DateTime @default(now())
+  changes     Json?
+
+  @@map("audit_logs")
+}
