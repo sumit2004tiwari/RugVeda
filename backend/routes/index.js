@@ -7,6 +7,7 @@ const wishlistRoutes = require('./wishlist');
 const addressRoutes = require('./addresses');
 const couponRoutes = require('./coupons');
 const orderRoutes = require('./orders');
+const paymentRoutes = require('./payments');
 const notificationRoutes = require('./notifications');
 const chatRoutes = require('./chat');
 
@@ -20,6 +21,7 @@ router.use('/wishlist', wishlistRoutes);
 router.use('/addresses', addressRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/orders', orderRoutes);
+router.use('/payments', paymentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/chat', chatRoutes);
 
