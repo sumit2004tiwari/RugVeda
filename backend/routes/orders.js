@@ -27,8 +27,8 @@ router.post('/', authRequired, asyncHandler(async (req, res) => {
 }));
 
 router.get('/', authRequired, asyncHandler(async (req, res) => {
-  const orders = await prisma.order.findMany({ where: { userId: req.user.id }, orderBy: { placedAt: 'desc' }, include: { items: { include: { product: true, variant: true } }, payments: true } });
-  return success(res, orders);
+  const data = await ctrl.listMyOrders(req);
+  return success(res, data);
 }));
 
 router.put('/:id/status', authRequired, allowRoles('ADMIN','VENDOR'), asyncHandler(async (req, res) => {
