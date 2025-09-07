@@ -98,6 +98,8 @@ model User {
   couponRedemptions CouponRedemption[]
   chats            Chat[]
   notifications    Notification[]
+  wishlists        Wishlist[]
+  sentMessages     ChatMessage[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   isDeleted        Boolean            @default(false)
@@ -191,6 +193,8 @@ model Product {
   categories      ProductCategory[]
   orderItems      OrderItem[]
   inventoryTxns   InventoryTransaction[]
+  cartItems       CartItem[]
+  wishlists       Wishlist[]
 
   @@map("products")
   @@index([slug])
@@ -392,6 +396,7 @@ model Order {
   payments           Payment[]
   shipments          Shipment[]
   returns            ReturnRequest[]
+  couponRedemptions  CouponRedemption[]
 
   @@map("orders")
   @@index([userId])
@@ -412,6 +417,8 @@ model OrderItem {
   taxAmount    Decimal?        @db.Decimal(12, 2)
   discount     Decimal?        @db.Decimal(12, 2)
   totalPrice   Decimal         @db.Decimal(12, 2) // unitPrice*qty + tax - discount snapshot
+
+  returnItems  ReturnItem[]
 
   @@map("order_items")
   @@index([orderId])
