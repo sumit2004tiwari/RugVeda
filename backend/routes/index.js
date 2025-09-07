@@ -38,5 +38,7 @@ router.use('/returns', returnRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/chat', chatRoutes);
+router.use('/audit-logs', auditRoutes);
+router.use('/inventory', inventoryRoutes);
 
 module.exports = router;
