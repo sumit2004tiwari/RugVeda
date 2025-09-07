@@ -8,44 +8,8 @@ const router = express.Router();
 
 // List with filters, search, sort, pagination
 router.get('/', asyncHandler(async (req, res) => {
-  const { q, categoryId, material, color, origin, minPrice, maxPrice, inStock, sort = 'recent', page = '1', pageSize = '12' } = req.query;
-  const where = { isActive: true, isDeleted: false };
-  if (q) where.OR = [
-    { name: { contains: String(q), mode: 'insensitive' } },
-    { description: { contains: String(q), mode: 'insensitive' } },
-  ];
-  if (categoryId) where.categories = { some: { categoryId: String(categoryId) } };
-  if (material) where.material = String(material);
-  if (color) where.color = String(color);
-  if (origin) where.origin = String(origin);
-  if (inStock === 'true') where.stockQuantity = { gt: 0 };
-  if (minPrice || maxPrice) where.price = { gte: minPrice ? Number(minPrice) : undefined, lte: maxPrice ? Number(maxPrice) : undefined };
-
-  const orderBy = sort === 'price_asc' ? { price: 'asc' }
-    : sort === 'price_desc' ? { price: 'desc' }
-    : sort === 'name_asc' ? { name: 'asc' }
-    : sort === 'name_desc' ? { name: 'desc' }
-    : { createdAt: 'desc' };
-
-  const skip = (parseInt(String(page)) - 1) * parseInt(String(pageSize));
-  const take = parseInt(String(pageSize));
-
-  const [total, items] = await Promise.all([
-    prisma.product.count({ where }),
-    prisma.product.findMany({
-      where,
-      orderBy,
-      skip,
-      take,
-      include: {
-        images: { orderBy: { position: 'asc' } },
-        variants: true,
-        categories: { include: { category: true } },
-      },
-    }),
-  ]);
-
-  return success(res, { total, page: Number(page), pageSize: Number(pageSize), items });
+  const data = await ctrl.list(req);
+  return success(res, data);
 }));
 
 // Admin/vendor create product
