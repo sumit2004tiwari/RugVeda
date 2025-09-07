@@ -20,4 +20,19 @@ router.post('/read/:id', authRequired, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.post('/read-all', authRequired, async (req, res, next) => {
+  try {
+    await prisma.notification.updateMany({ where: { userId: req.user.id, isRead: false }, data: { isRead: true } });
+    return success(res, { ok: true }, 'All marked read');
+  } catch (e) { next(e); }
+});
+
+router.post('/:id/vendor-read', authRequired, allowRoles('ADMIN','VENDOR'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const n = await prisma.notification.update({ where: { id }, data: { vendorRead: true } });
+    return success(res, n, 'Vendor marked read');
+  } catch (e) { next(e); }
+});
+
 module.exports = router;
