@@ -31,4 +31,15 @@ router.get('/:chatId/messages', authRequired, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.get('/', authRequired, asyncHandler(async (req, res) => {
+  const chats = await prisma.chat.findMany({ where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } });
+  return success(res, chats);
+}));
+
+router.post('/:chatId/close', authRequired, allowRoles('ADMIN','VENDOR'), asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+  const ch = await prisma.chat.update({ where: { id: chatId }, data: { isActive: false } });
+  return success(res, ch, 'Chat closed');
+}));
+
 module.exports = router;
