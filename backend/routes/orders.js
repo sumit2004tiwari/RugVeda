@@ -32,15 +32,8 @@ router.get('/', authRequired, asyncHandler(async (req, res) => {
 }));
 
 router.put('/:id/status', authRequired, allowRoles('ADMIN','VENDOR'), asyncHandler(async (req, res) => {
-  const { id } = req.params; const { status } = req.body;
-  const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
-  if (!order) throw new ApiError(404, 'Order not found');
-  const allowed = new Set(['PENDING','PAID','CONFIRMED','PACKED','SHIPPED','DELIVERED','CANCELLED']);
-  if (!allowed.has(status)) throw new ApiError(400, 'Invalid status');
-  await prisma.order.update({ where: { id }, data: { status } });
-  if (status === 'CANCELLED') await restoreForCancellation(order.items);
-  await recordAudit('Order', id, 'STATUS_UPDATE', req.user?.id, { status });
-  return success(res, { id, status }, 'Status updated');
+  const data = await ctrl.updateStatus(req);
+  return success(res, data, 'Status updated');
 }));
 
 module.exports = router;
