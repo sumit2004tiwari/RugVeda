@@ -1,9 +1,8 @@
 const express = require('express');
-const { prisma } = require('../utils/prisma');
-const { success, ApiError } = require('../utils/response');
+const { success } = require('../utils/response');
 const { authRequired, allowRoles } = require('../middlewares/auth');
 const { asyncHandler } = require('../utils/async');
-const { recordAudit } = require('../services/audit');
+const ctrl = require('../controllers/products.controller');
 
 const router = express.Router();
 
