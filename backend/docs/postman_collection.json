@@ -1,0 +1,30 @@
+{
+  "info": {
+    "name": "RugVeda API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health" } },
+
+    { "name": "Auth - Register", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "url": "{{baseUrl}}/auth/register", "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"secret123\"\n}" } } },
+    { "name": "Auth - Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"secret123\"\n}" } } },
+
+    { "name": "Users - Me", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/users/me" } },
+
+    { "name": "Products - List", "request": { "method": "GET", "url": "{{baseUrl}}/products" } },
+    { "name": "Products - Create", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{baseUrl}}/products", "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sample Rug\",\n  \"slug\": \"sample-rug\",\n  \"price\": 999,\n  \"images\": [{\"url\": \"https://example.com/img.jpg\"}]\n}" } } },
+
+    { "name": "Cart - Get", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/cart" } },
+    { "name": "Cart - Add Item", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{baseUrl}}/cart/items", "body": { "mode": "raw", "raw": "{\n  \"productId\": \"<PRODUCT_ID>\",\n  \"quantity\": 1\n}" } } },
+
+    { "name": "Orders - Create", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{baseUrl}}/orders", "body": { "mode": "raw", "raw": "{\n  \"paymentMethod\": \"COD\"\n}" } } },
+    { "name": "Orders - List", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/orders" } },
+
+    { "name": "Payments - Intent", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{baseUrl}}/payments/intent", "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"<ORDER_ID>\",\n  \"provider\": \"RAZORPAY\"\n}" } } }
+  ]
+}

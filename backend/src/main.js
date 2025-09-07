@@ -44,7 +44,12 @@ const limiter = rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: tr
 app.use(limiter);
 
 app.get('/api/health', (_req, res) => success(res, { uptime: process.uptime(), env: config.env }, 'OK'));
+
+// API routes
 app.use('/api', routes);
+
+// Docs
+require('./docs').mountDocs(app);
 
 app.use(notFound);
 app.use(errorHandler);
