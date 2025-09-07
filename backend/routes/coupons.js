@@ -1,11 +1,10 @@
 const express = require('express');
-const dayjs = require('dayjs');
-const { prisma } = require('../utils/prisma');
-const { success, ApiError } = require('../utils/response');
+const { success } = require('../utils/response');
 const { authRequired, allowRoles } = require('../middlewares/auth');
 const { z } = require('zod');
 const { asyncHandler } = require('../utils/async');
 const { validate } = require('../utils/validate');
+const ctrl = require('../controllers/coupons.controller');
 
 const router = express.Router();
 
