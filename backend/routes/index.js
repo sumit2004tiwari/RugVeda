@@ -16,6 +16,8 @@ const returnRoutes = require('./returns');
 const paymentRoutes = require('./payments');
 const notificationRoutes = require('./notifications');
 const chatRoutes = require('./chat');
+const auditRoutes = require('./audit');
+const inventoryRoutes = require('./inventory');
 
 const router = express.Router();
 
