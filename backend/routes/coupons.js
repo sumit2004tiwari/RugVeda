@@ -38,30 +38,13 @@ router.delete('/:id', authRequired, allowRoles('ADMIN'), asyncHandler(async (req
 }));
 
 router.get('/validate', authRequired, asyncHandler(async (req, res) => {
-  const { code, subtotal } = req.query;
-  if (!code) throw new ApiError(400, 'code required');
-  const coupon = await prisma.coupon.findUnique({ where: { code: String(code) }, include: { redemptions: true } });
-  if (!coupon || !coupon.isActive) throw new ApiError(404, 'Invalid coupon');
-  const now = dayjs();
-  if (coupon.startsAt && now.isBefore(dayjs(coupon.startsAt))) throw new ApiError(400, 'Coupon not started');
-  if (coupon.endsAt && now.isAfter(dayjs(coupon.endsAt))) throw new ApiError(400, 'Coupon expired');
-  const usedCount = await prisma.couponRedemption.count({ where: { couponId: coupon.id } });
-  if (coupon.usageLimit && usedCount >= coupon.usageLimit) throw new ApiError(400, 'Coupon usage limit reached');
-  const userUsed = await prisma.couponRedemption.count({ where: { couponId: coupon.id, userId: req.user.id } });
-  if (userUsed >= coupon.perUserLimit) throw new ApiError(400, 'Coupon already used');
-  if (coupon.isFirstOrderOnly) {
-    const orders = await prisma.order.count({ where: { userId: req.user.id } });
-    if (orders > 0) throw new ApiError(400, 'First order only');
-  }
-  const sub = Number(subtotal || 0);
-  if (sub < Number(coupon.minOrderAmount)) throw new ApiError(400, 'Minimum order amount not met');
-  const discount = await computeDiscount(coupon, sub);
-  return success(res, { coupon, discount });
+  const data = await ctrl.validateCoupon(req);
+  return success(res, data);
 }));
 
 router.get('/:id/redemptions', authRequired, allowRoles('ADMIN'), asyncHandler(async (req, res) => {
-  const list = await prisma.couponRedemption.findMany({ where: { couponId: req.params.id }, orderBy: { redeemedAt: 'desc' } });
-  return success(res, list);
+  const data = await ctrl.redemptions(req);
+  return success(res, data);
 }));
 
 module.exports = router;
