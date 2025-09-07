@@ -1,7 +1,7 @@
 const express = require('express');
 const { prisma } = require('../utils/prisma');
 const { success } = require('../utils/response');
-const { authRequired } = require('../middlewares/auth');
+const { authRequired, allowRoles } = require('../middlewares/auth');
 
 const router = express.Router();
 
