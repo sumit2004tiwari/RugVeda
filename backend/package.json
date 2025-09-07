@@ -7,6 +7,10 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon src/main.js",
+    "start": "node src/main.js",
+    "prisma:generate": "prisma generate --schema=config/db.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=config/db.prisma",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
